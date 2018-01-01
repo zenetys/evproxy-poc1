@@ -1,0 +1,52 @@
+PUT /_template/monitoring
+{
+  "version": 1,
+  "index_patterns": [
+    "monitoring"
+  ],
+  "settings": {
+    "index": {
+      "number_of_shards": "1",
+      "number_of_replicas": "0"
+    }
+  },
+  "mappings": {
+    "events": {
+      "properties": {
+        "datetime_received": {
+          "type": "date",
+          "format": "strict_date_time||strict_date_time_no_millis"
+        },
+        "datetime_reported": {
+          "type": "date",
+          "format": "strict_date_time||strict_date_time_no_millis"
+        },
+        "src_host": {
+          "type": "keyword"
+        },
+        "src_format": {
+          "type": "keyword"
+        },
+        "device": {
+          "type": "keyword"
+        },
+        "indicator": {
+          "type": "keyword"
+        },
+        "state": {
+          "type": "byte"
+        },
+        "last_received_state_change": {
+          "type": "date",
+          "format": "strict_date_time||strict_date_time_no_millis"
+        },
+        "state_count": {
+          "type": "long"
+        },
+        "output": {
+          "type": "text"
+        }
+      }
+    }
+  }
+}
