@@ -1,0 +1,30 @@
+This is an rsyslog to elasticsearch update proxy for monitoring events.
+It receives monitoring events sent from rsyslog in HTTP through omelasticsearch,
+then sends updates to elasticsearch.
+
+Goal: hypervisor for monitoring events
+
++------------------+          +------+         +-------------+
+| rsyslog          |          |update|         |elasticsearch|
+| omeslasticsearch |   -->    |proxy |   -->   |index        |
++------------------+          +------+         +-------------+
+
+TODO, ideas:
+- put events in queues, ZeroMQ, Redis, ...
+- queue workers to consume events (scale on several instances)
+- alerts confirmation, problem duration
+- notifications
+- workflow for metrics indexation (ES, InfluxDB, Prometheus, ...)
+- metrics based events, watch (Prometheus integration for instance)
+
+Links:
+- https://github.com/JustinTulloss/zeromq.node
+- https://github.com/NodeRedis/node_redis
+
+Indexation:
+- Should we absolutely minimize application joins?
+- Query example: i:192.168.1.28 & t:Linux
+- IP and type fields should be on a device object only
+- https://www.elastic.co/guide/en/elasticsearch/reference/current/parent-join.html
+- https://www.elastic.co/guide/en/elasticsearch/reference/current/nested.html
+- https://www.rethinkdb.com/
