@@ -76,6 +76,84 @@ function request(options, callback) {
     req.end(options.data);
 }
 
+function jsonRequest(options, callback) {
+    function onResult(err, result) {
+        if (err) {
+            callback(err);
+            return;
+        }
+
+        try { result.decoded = JSON.parse(result.body); }
+        catch (err) {
+            callback(new OError('JSON parse error ' + err.message, result));
+            return;
+        }
+        callback(null, result);
+    }
+
+    request(options, onResult);
+}
+
+const ES_SEARCH_DEFAULTS = {
+    host: '127.0.0.1',
+    port: 9200,
+    agent: http.globalAgent,
+    method: 'POST',
+    path: '/_search',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    timeout: 1000,
+    data: {
+        query: {
+            match_all: {}
+        },
+        size: 10
+    }
+};
+
+function esSearch(options, callback) {
+    function onResult(err, result) {
+        if (err) {
+            callback(err);
+            return;
+        }
+        if (!result.decoded.hits || !result.decoded.hits.hits) {
+            callback(new OError('ES invalid search response', result));
+            return;
+        }
+        if (!options.scroll) {
+            callback(null, result.decoded);
+            return;
+        }
+        if (!result.decoded._scroll_id) {
+            callback(new OError('ES missing response scroll id', result));
+            return;
+        }
+
+        callback(null, result.decoded);
+        options.path = '/_search/scroll';
+        options.data = { scroll_id: result.decoded._scroll_id };
+
+        if (result.decoded.hits.hits.length) {
+            options.data.scroll = options.scroll;
+            jsonRequest(options, onResult);
+        }
+        else {
+            options.method = 'DELETE';
+            request(options, () => {} /* noop */);
+        }
+    }
+
+    options = Object.assign({}, ES_SEARCH_DEFAULTS, options);
+
+    if (options.scroll)
+        options.path += (options.path.indexOf('?') > -1 ? '&' : '?') +
+            'scroll=' + options.scroll;
+
+    jsonRequest(options, onResult);
+}
+
 module.exports = {
     OError: OError,
     index: index,

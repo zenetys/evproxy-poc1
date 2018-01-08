@@ -63,7 +63,7 @@ srv.setHandler('GET /_cat/health', reqHealth);
 srv.setHandler('POST ' + esOptions.index, reqEvent);
 srv.setHandler('POST /control', reqControl);
 
-srv.start();
-
 process.once('SIGTERM', onTermSignal.bind(process, reqControl));
 process.once('SIGINT', onTermSignal.bind(process, reqControl));
+
+reqEvent.loadCache(() => srv.start());

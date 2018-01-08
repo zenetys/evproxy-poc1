@@ -38,6 +38,44 @@ function HandlerEsEvent(options) {
     options = Object.assign({}, DEFAULTS, options);
     var cache = new Cache(options);
 
+    function loadCache(callback) {
+        var loadOptions = {
+            host: options.host,
+            port: options.port,
+            agent: options.agent,
+            method: 'POST',
+            path:  options.index + '/_search',
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 30000,
+            data: {
+                query: { match_all: {} },
+                size: 100,
+                _source: [ 'state', 'state_count' ]
+            },
+            scroll: '1m'
+        };
+
+        var count = 0;
+        var calls = 0;
+
+        var cbSearch = function (err, result) {
+            if (err)
+                log.error('EV cache load failed, ' + err.message);
+            else if (result.hits.hits.length == 0) {
+                log.info(`EV cache load done ${calls}/${count}`);
+                callback();
+            }
+            else {
+                calls++;
+                count += result.hits.hits.length;
+                for (let i = 0; i < result.hits.hits.length; i++)
+                    cache.set(result.hits.hits[i]._id,
+                              result.hits.hits[i]._source);
+            }
+        }
+
+        util.esSearch(loadOptions, cbSearch);
+    }
 
     function processRequest(req, res) {
         var data = '';
@@ -184,6 +222,7 @@ function HandlerEsEvent(options) {
     }
 
     /* Exposed methods */
+    this.loadCache = loadCache;
     this.processRequest = processRequest;
 }
 
