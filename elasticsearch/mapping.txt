@@ -33,6 +33,12 @@ PUT /_template/monitoring
         "indicator": {
           "type": "keyword"
         },
+        "device_indicator_join": {
+          "type": "join",
+          "relations": {
+            "device": "indicator"
+          }
+        },
         "state": {
           "type": "byte"
         },
