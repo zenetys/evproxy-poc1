@@ -78,6 +78,7 @@ function HandlerEsEvent(options) {
             evCtx.ev.device;
         evCtx.id = util.index(evCtx.name);
 
+        handleJoin(evCtx);
         beSmart(evCtx);
 
         if (global.VERBOSE >= 3)
@@ -87,6 +88,21 @@ function HandlerEsEvent(options) {
             delete evCtx.ev.rawmsg;
 
         postUpdate(evCtx);
+    }
+
+    function handleJoin(evCtx) {
+        if (evCtx.ev.indicator) {
+            let parentId = util.index(evCtx.ev.device);
+            evCtx.ev.device_indicator_join = {
+                name: 'indicator',
+                parent: parentId
+            };
+        }
+        else {
+            evCtx.ev.device_indicator_join = {
+                name: 'device'
+            };
+        }
     }
 
     function beSmart(evCtx) {
