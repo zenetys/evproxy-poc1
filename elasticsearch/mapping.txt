@@ -8,6 +8,17 @@ PUT /_template/monitoring
     "index": {
       "number_of_shards": "1",
       "number_of_replicas": "0"
+    },
+    "analysis": {
+      "normalizer": {
+        "lc_normalizer": {
+          "type": "custom",
+          "char_filter": [],
+          "filter": [
+            "lowercase"
+          ]
+        }
+      }
     }
   },
   "mappings": {
@@ -28,10 +39,12 @@ PUT /_template/monitoring
           "type": "keyword"
         },
         "device": {
-          "type": "keyword"
+          "type": "keyword",
+          "normalizer": "lc_normalizer"
         },
         "indicator": {
-          "type": "keyword"
+          "type": "keyword",
+          "normalizer": "lc_normalizer"
         },
         "device_indicator_join": {
           "type": "join",
