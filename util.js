@@ -1,5 +1,6 @@
 "use strict";
 
+const util = require('util');
 const http = require('http');
 
 /* Reference:
@@ -154,12 +155,26 @@ function esSearch(options, callback) {
     jsonRequest(options, onResult);
 }
 
-module.exports = {
+function isEmptyObject(o) {
+    for (let i in o) {
+        if (o.hasOwnProperty(i))
+            return false;
+    }
+    return true;
+}
+
+util.inspect.defaultOptions.depth = null;
+util.inspect.defaultOptions.maxArrayLength = null;
+
+/* Extend the standard util library.
+ * Note that it may be a bad idea to do that. */
+Object.assign(module.exports, util, {
     OError: OError,
     index: index,
     pad02dPositive: pad02dPositive,
     pad03dPositive: pad03dPositive,
     request: request,
     jsonRequest: jsonRequest,
-    esSearch: esSearch
-};
+    esSearch: esSearch,
+    isEmptyObject: isEmptyObject
+});
