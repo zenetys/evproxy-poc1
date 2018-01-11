@@ -65,7 +65,65 @@ PUT /_template/monitoring
         "output": {
           "type": "text"
         }
-      }
+      },
+      "dynamic_templates": [
+        {
+          "type_ip": {
+            "match_pattern": "regex",
+            "match": "^(ip_.*|.*_ip|ip)$",
+            "mapping": {
+              "type": "ip"
+            }
+          }
+        },
+        {
+          "type_keyword": {
+            "match_pattern": "regex",
+            "match": "^(kw|device)_.*$",
+            "mapping": {
+              "type": "keyword",
+              "normalizer": "lc_normalizer"
+            }
+          }
+        },
+        {
+          "type_text": {
+            "match_pattern": "regex",
+            "match": "^text_.*$",
+            "mapping": {
+              "type": "text"
+            }
+          }
+        },
+        {
+          "type_long": {
+            "match_pattern": "regex",
+            "match": "^long_.*$",
+            "mapping": {
+              "type": "long"
+            }
+          }
+        },
+        {
+          "type_double": {
+            "match_pattern": "regex",
+            "match": "^double_.*$",
+            "mapping": {
+              "type": "double"
+            }
+          }
+        },
+        {
+          "not_indexed": {
+            "match_pattern": "regex",
+            "match": "^.+$",
+            "mapping": {
+              "type": "text",
+              "index": false
+            }
+          }
+        }
+      ]
     }
   }
 }
