@@ -111,6 +111,7 @@ function HandlerEsEvent(options) {
             return;
         }
 
+        evCtx.rm = [];
         evCtx.name = evCtx.ev.indicator ?
             evCtx.ev.device + '/' + evCtx.ev.indicator :
             evCtx.ev.device;
@@ -181,44 +182,73 @@ function HandlerEsEvent(options) {
             port: options.port,
             method: 'POST',
             headers: { 'Content-Type': 'application/x-ndjson' },
-            path: options.index + '/' + evCtx.id + '/_update?routing=1',
+            path: options.index + '/_bulk',
             agent: options.agent,
             timeout: 10000,
-            data: {
-                doc: evCtx.ev,
-                doc_as_upsert: true,
-                retry_on_conflict: 1
-            }
+            data: ''
         };
 
-        var cbResult = function (err, result) {
-            if (err) {
-                log.error('EV index failed ' + err.message);
-                if (global.VERBOSE >= 3 && err.opaque.body)
-                    log.error('EV reply', err.opaque.body);
-                return;
-            }
+        var update = [];
 
-            var pool = postOptions.agent.getName(postOptions);
-            var stats = [];
-            /* http status */
-            stats.push(result.res.statusCode);
-            /* queue length */
-            stats.push(postOptions.agent.requests[pool] ?
-                postOptions.agent.requests[pool].length : 0);
-            /* datetime_received latency */
-            stats.push(result.resDate - new Date(evCtx.ev.datetime_received));
-            /* datetime_reported latency */
-            stats.push(evCtx.ev.datetime_reported ?
-                result.resDate - new Date(evCtx.ev.datetime_reported) : '-');
+        update.push(JSON.stringify({
+            doc: evCtx.ev,
+            doc_as_upsert: true
+        }));
 
-            if (global.VERBOSE >= 1)
-                log.info('EV ' + stats.join('/') + ' ' + evCtx.name);
-            if (global.VERBOSE >= 3 && result.body)
-                log.info('EV reply', result.body);
+        if (evCtx.rm.length)
+            update.push(JSON.stringify({
+                script: {
+                    source: 'for (def i : params.keys) ctx._source.remove(i);',
+                    lang: 'painless',
+                    params: { keys: evCtx.rm }
+                }
+            }));
+
+        for (let u of update)
+            postOptions.data += `{"update":{"_id":"${evCtx.id}","routing":1},\
+"retry_on_conflict":1}\n${u}\n`;
+
+        util.jsonRequest(postOptions,
+            (e, r) => postCallback(evCtx, postOptions, e, r));
+    }
+
+    function postCallback(evCtx, postOptions, err, result) {
+        if (err) {
+            log.error('EV index failed, ' + err.message);
+            if (global.VERBOSE >= 3 && err.opaque.body)
+                log.error('EV reply', err.opaque.body);
+            return;
         }
 
-        util.request(postOptions, cbResult);
+        var total = result.decoded.items.length;
+        var errors = 0;
+        result.decoded.items.forEach(
+            e => { e.update.error && errors++ });
+        var pool = postOptions.agent.getName(postOptions);
+        var queue = postOptions.agent.requests[pool] ?
+            postOptions.agent.requests[pool].length : 0;
+        var receivedLatency = result.resDate -
+            new Date(evCtx.ev.datetime_received);
+        var reportedLatency = evCtx.ev.datetime_reported ?
+            result.resDate - new Date(evCtx.ev.datetime_reported) : '-';
+
+        var logString = 'EV ' +
+            result.res.statusCode + '/' + /* ES HTTP status code */
+            result.decoded.took + '/' + /* ES process time */
+            total + '/' + /* number of update items */
+            errors + ' ' + /* number of update items in error */
+            queue + '/' + /* queue length */
+            receivedLatency + '/' + /* datetime_received latency */
+            reportedLatency + ' ' + /* datetime_reported latency */
+            evCtx.name; /* device[/indicator] */
+
+        if (errors) {
+            log.error(logString);
+            if (global.VERBOSE >= 3)
+                log.error('EV reply', util.inspect(result.decoded));
+        }
+        else if (global.VERBOSE >= 1)
+            log.info(logString);
     }
 
     /* Exposed methods */
