@@ -167,6 +167,11 @@ function HandlerEsEvent(options) {
                 evCtx.ev.datetime_received + '/' + evCtx.ev.state,
                 evCtx.name);
 
+            /* remove ack field in OK/ERROR or ERROR/OK transitions */
+            if ((cacheData.state == 0 && evCtx.ev.state != 0) ||
+                (cacheData.state != 0 && evCtx.ev.state == 0))
+                evCtx.rm.push('ack');
+
             cacheData.state = evCtx.ev.state;
             cacheData.state_count = 1;
             evCtx.ev.state_count = 1;
