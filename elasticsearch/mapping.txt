@@ -64,6 +64,9 @@ PUT /_template/monitoring
         },
         "output": {
           "type": "text"
+        },
+        "ack": {
+          "type": "boolean"
         }
       },
       "dynamic_templates": [
