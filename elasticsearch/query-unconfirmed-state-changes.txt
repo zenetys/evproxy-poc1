@@ -1,0 +1,23 @@
+GET /monitoring/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "query_string": {
+            "fuzziness": 0,
+            "query": "last_received_state_change:{now-5m TO *]"
+          }
+        }
+      ]
+    }
+  },
+  "sort": [
+    {
+      "last_received_state_change": {
+        "order": "desc"
+      }
+    }
+  ],
+  "size": 100
+}

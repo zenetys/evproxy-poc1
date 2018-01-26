@@ -1,0 +1,14 @@
+GET /monitoring/_search
+{
+  "sort": [
+    {
+      "state": {
+        "order": "desc"
+      },
+      "last_received_state_change": {
+        "order": "desc"
+      }
+    }
+  ],
+  "size": 100
+}

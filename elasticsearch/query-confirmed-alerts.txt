@@ -1,0 +1,94 @@
+GET /monitoring/_search
+{
+  "query": {
+    "bool": {
+      "should": [
+        {
+          "bool": {
+            "must": [
+              {
+                "term": {
+                  "device_indicator_join": "device"
+                }
+              },
+              {
+                "range": {
+                  "state": {
+                    "gt": 0
+                  }
+                }
+              },
+              {
+                "range": {
+                  "last_received_state_change": {
+                    "lte": "now-5m"
+                  }
+                }
+              }
+            ],
+            "must_not": [
+              {
+                "term": {
+                  "ack": true
+                }
+              }
+            ]
+          }
+        },
+        {
+          "bool": {
+            "must": [
+              {
+                "term": {
+                  "device_indicator_join": "indicator"
+                }
+              },
+              {
+                "has_parent": {
+                  "parent_type": "device",
+                  "query": {
+                    "term": {
+                      "state": 0
+                    }
+                  }
+                }
+              },
+              {
+                "range": {
+                  "state": {
+                    "gt": 0
+                  }
+                }
+              },
+              {
+                "range": {
+                  "last_received_state_change": {
+                    "lte": "now-5m"
+                  }
+                }
+              }
+            ],
+            "must_not": [
+              {
+                "term": {
+                  "ack": true
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "sort": [
+    {
+      "state": {
+        "order": "desc"
+      },
+      "last_received_state_change": {
+        "order": "desc"
+      }
+    }
+  ],
+  "size": 100
+}
